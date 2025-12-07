@@ -1,6 +1,4 @@
-Absolutely — let’s give your README some personality so it feels like something *you* wrote, not a corporate manual. Here’s a more natural, friendly, human‑sounding version that still looks clean and professional on GitHub.
 
----
 
 #  Offline AI Assistant  
 A simple, local-first AI assistant that runs entirely on your machine. No cloud, no API keys, no hidden magic — just FastAPI, Ollama, and a lightweight frontend working together to give you an offline chat experience.
@@ -99,11 +97,6 @@ Sends your prompt (and optional file context) to the local model.
 If you want to improve something, feel free to open a PR or issue.  
 This project is meant to be simple and hackable.
 
----
-
-## 📜 License  
-MIT License (or whichever you prefer)
 
 ---
 
-If you want, I can also rewrite your README in a more playful tone, more serious tone, or more “developer portfolio” style. Just tell me the vibe you want.
