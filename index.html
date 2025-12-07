@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiceGPT</title>
+<style>
+:root {
+    --bg-color: #ffffff;
+    --sidebar-bg: #f5f5f5;
+    --chat-bg: #ffffff;
+    --user-msg-bg: #d1e7ff;
+    --bot-msg-bg: #f0f0f0;
+    --text-color: #000000;
+    --header-color: #000000;
+    --sidebar-text: #000000;
+    --button-bg: #e0e0e0;
+    --button-text: #000000;
+    --file-badge-bg: #4CAF50;
+}
+
+body, html { 
+    margin:0; 
+    padding:0; 
+    height:100%; 
+    font-family:'Segoe UI',sans-serif; 
+    background: var(--bg-color); 
+    color: var(--text-color); 
+}
+
+.container { 
+    display:flex; 
+    height:100vh; 
+    overflow:hidden; 
+}
+
+.sidebar {
+    width:260px;
+    background: var(--sidebar-bg);
+    display:flex;
+    flex-direction:column;
+    padding:20px;
+    border-right:1px solid #ccc;
+}
+
+.sidebar h2 { 
+    margin:0 0 20px 0; 
+    text-align:center; 
+    color: var(--sidebar-text); 
+}
+
+.sidebar button { 
+    padding:10px; 
+    margin-bottom:10px; 
+    border:none; 
+    border-radius:8px; 
+    background: var(--button-bg); 
+    color: var(--button-text); 
+    cursor:pointer; 
+    transition:0.2s; 
+}
+
+.sidebar button:hover { 
+    opacity:0.85; 
+}
+
+.chat-area { 
+    flex:1; 
+    display:flex; 
+    flex-direction:column; 
+}
+
+.chat-header { 
+    padding:15px 20px; 
+    font-size:22px; 
+    font-weight:bold; 
+    border-bottom:1px solid #ccc; 
+    background: var(--chat-bg); 
+    color: var(--header-color); 
+}
+
+.messages { 
+    flex:1; 
+    padding:20px; 
+    overflow-y:auto; 
+    display:flex; 
+    flex-direction:column; 
+    gap:10px; 
+    background: var(--chat-bg); 
+}
+
+.message { 
+    padding:12px 18px; 
+    border-radius:20px; 
+    max-width:70%; 
+    word-wrap:break-word; 
+    animation: fadeIn 0.2s; 
+}
+
+.message.user { 
+    align-self:flex-end; 
+    background: var(--user-msg-bg); 
+    color: var(--text-color); 
+}
+
+.message.bot { 
+    align-self:flex-start; 
+    background: var(--bot-msg-bg); 
+    color: var(--text-color); 
+}
+
+.message.loading {
+    opacity: 0.7;
+    font-style: italic;
+}
+
+@keyframes fadeIn { 
+    from {opacity:0; transform:translateY(10px);} 
+    to {opacity:1; transform:translateY(0);} 
+}
+
+.input-area { 
+    display:flex;
+    flex-direction:column;
+    padding:15px 20px; 
+    border-top:1px solid #ccc; 
+    background: var(--chat-bg); 
+}
+
+.file-upload-area {
+    display:flex;
+    align-items:center;
+    margin-bottom:10px;
+    gap:10px;
+}
+
+.file-badge {
+    background: var(--file-badge-bg);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.file-badge .remove {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.input-row {
+    display:flex;
+    gap:10px;
+}
+
+.input-area input[type="text"] { 
+    flex:1; 
+    padding:12px 18px; 
+    border-radius:25px; 
+    border:1px solid #ccc; 
+    outline:none; 
+    font-size:14px; 
+    background: var(--chat-bg); 
+    color: var(--text-color); 
+}
+
+.input-area input[type="file"] {
+    display:none;
+}
+
+.input-area button { 
+    padding:12px 20px; 
+    border-radius:25px; 
+    border:none; 
+    background: var(--button-bg); 
+    color: var(--button-text); 
+    font-weight:bold; 
+    cursor:pointer; 
+    transition:0.2s; 
+}
+
+.input-area button:hover:not(:disabled) { 
+    opacity:0.85; 
+}
+
+.input-area button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.messages::-webkit-scrollbar { 
+    width:8px; 
+}
+
+.messages::-webkit-scrollbar-thumb { 
+    background: var(--button-bg); 
+    border-radius:4px; 
+}
+
+.messages::-webkit-scrollbar-track { 
+    background: var(--chat-bg); 
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <h2>RiceGPT</h2>
+        <button onclick="newChat()">New Chat</button>
+        <button onclick="toggleTheme()">Toggle Dark/Light</button>
+    </div>
+    <div class="chat-area">
+        <div class="chat-header">RiceGPT 📎</div>
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <div class="file-upload-area" id="fileArea"></div>
+            <div class="input-row">
+                <input type="file" id="fileInput" accept=".txt,.md,.py,.js,.html,.css,.json,.csv" onchange="handleFileSelect(event)">
+                <button onclick="document.getElementById('fileInput').click()">📎 Attach</button>
+                <input type="text" id="prompt" placeholder="Ask Rice anything..." />
+                <button id="sendBtn" onclick="sendPrompt()">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let chatHistory = [];
+const session_id = Math.random().toString(36).substring(2,12);
+let isProcessing = false;
+let currentFileId = null;
+
+function displayMessage(text, sender){
+    const messagesDiv = document.getElementById("messages");
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `message ${sender}`;
+    msgDiv.textContent = text;
+    messagesDiv.appendChild(msgDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return msgDiv;
+}
+
+async function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const res = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            currentFileId = data.file_id;
+            showFileBadge(data.filename);
+            displayMessage(`📎 Attached: ${data.filename} (${Math.round(data.size/1024)}KB)`, "bot");
+        } else {
+            displayMessage(`❌ Failed to upload: ${data.error}`, "bot");
+        }
+    } catch (err) {
+        displayMessage(`❌ Upload error: ${err.message}`, "bot");
+    }
+    
+    // Reset file input
+    event.target.value = '';
+}
+
+function showFileBadge(filename) {
+    const fileArea = document.getElementById('fileArea');
+    fileArea.innerHTML = `
+        <div class="file-badge">
+            📎 ${filename}
+            <span class="remove" onclick="removeFile()">✕</span>
+        </div>
+    `;
+}
+
+function removeFile() {
+    currentFileId = null;
+    document.getElementById('fileArea').innerHTML = '';
+}
+
+async function sendPrompt(){
+    if (isProcessing) return;
+    
+    const input = document.getElementById("prompt");
+    const sendBtn = document.getElementById("sendBtn");
+    const text = input.value.trim();
+    
+    if(!text) return;
+    
+    isProcessing = true;
+    input.disabled = true;
+    sendBtn.disabled = true;
+    
+    chatHistory.push({ role:"user", content:text });
+    displayMessage(text, "user");
+    input.value = "";
+    
+    const loadingMsg = displayMessage("Thinking...", "bot loading");
+
+    try{
+        const payload = { 
+            prompt: chatHistory, 
+            session_id: session_id
+        };
+        
+        // Include file context if available
+        if (currentFileId) {
+            payload.file_context = currentFileId;
+        }
+        
+        const res = await fetch("/ask", {
+            method:"POST",
+            headers: { "Content-Type":"application/json" },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!res.ok) {
+            throw new Error(`Server error: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        loadingMsg.remove();
+        
+        chatHistory.push({ role:"assistant", content:data.response });
+        displayMessage(data.response, "bot");
+        
+        // Clear file after sending
+        if (currentFileId) {
+            removeFile();
+        }
+        
+    } catch(err){
+        loadingMsg.remove();
+        const errorMsg = `Error: ${err.message}`;
+        displayMessage(errorMsg, "bot");
+        console.error("Error:", err);
+    } finally {
+        isProcessing = false;
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+    }
+}
+
+function newChat(){
+    chatHistory = [];
+    currentFileId = null;
+    document.getElementById("messages").innerHTML = "";
+    removeFile();
+}
+
+document.getElementById("prompt").addEventListener("keypress", e=>{
+    if(e.key==="Enter" && !isProcessing) sendPrompt();
+});
+
+function toggleTheme(){
+    const root = document.documentElement;
+
+    if(root.style.getPropertyValue('--bg-color') === '#11121a'){
+        root.style.setProperty('--bg-color','#ffffff');
+        root.style.setProperty('--sidebar-bg','#f5f5f5');
+        root.style.setProperty('--chat-bg','#ffffff');
+        root.style.setProperty('--text-color','#000000');
+        root.style.setProperty('--header-color','#000000');
+        root.style.setProperty('--sidebar-text','#000000');
+        root.style.setProperty('--button-bg','#e0e0e0');
+        root.style.setProperty('--button-text','#000000');
+        root.style.setProperty('--user-msg-bg','#d1e7ff');
+        root.style.setProperty('--bot-msg-bg','#f0f0f0');
+    } else {
+        root.style.setProperty('--bg-color','#11121a');
+        root.style.setProperty('--sidebar-bg','#1c1e2a');
+        root.style.setProperty('--chat-bg','#11121a');
+        root.style.setProperty('--text-color','#ffffff');
+        root.style.setProperty('--header-color','#ffffff');
+        root.style.setProperty('--sidebar-text','#ffffff');
+        root.style.setProperty('--button-bg','#333333');
+        root.style.setProperty('--button-text','#ffffff');
+        root.style.setProperty('--user-msg-bg','#2d4a6b');
+        root.style.setProperty('--bot-msg-bg','#2a2a2a');
+    }
+}
+</script>
+</body>
+</html>
